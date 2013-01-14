@@ -1,0 +1,193 @@
+$bg-color           : #ccc;
+$bg-highlight-color : red;
+$font-color         : #444;
+$border-color       : #ddd;
+$font-link-color    : blue;
+$font-family        : Helvetica, Arial;
+
+$bg-light-color     : lighten($bg-color, 15%);
+$font-light-color   : lighten($font-color, 15%);
+$border-light-color : lighten($border-color, 15%);
+
+@mixin font-base {
+  font-family: $font-family;
+  color: $font-color;
+  line-height: 100%;
+  margin-top: 0;
+  margin-right: 0;
+  margin-bottom: 10px;
+  margin-left: 0;
+  text-align: left;
+}
+
+#outlook a {  padding: 0; } /* Force Outlook to provide a "view in browser" button. */  
+.ReadMsgBody {  width:100%; } /* Force Hotmail to display emails at full width */
+.ExternalClass { width:100%; } 
+
+body { 
+  margin:0; 
+  padding:0;
+  width: 100% !important;
+  -webkit-text-size-adjust:none; /* Prevent Webkit platforms from changing default text sizes. */
+}
+img { 
+  border: 0; 
+  height: auto; 
+  line-height: 100%;
+  outline: none; 
+  text-decoration: none;
+} 
+a { color: $font-link-color; }
+table td { 
+  border-collapse: collapse;
+}
+#background-table {
+  height:100% !important; 
+  margin:0; 
+  padding:0; 
+  width:100% !important;
+}
+body, #background-table{
+  background-color: $bg-color;
+}
+
+#template-container{
+  border: 1px solid $border-color;
+}
+
+h1, .h1 {
+  @include font-base;
+  font-size: 34px;
+  font-weight: bold;
+}
+
+h2, .h2 {
+  @include font-base;
+  font-size: 30px;
+}
+
+h3, .h3 {
+  @include font-base;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+h4, .h4 {
+  @include font-base;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+
+#template-pre-header{
+  background-color: $bg-light-color;
+}
+
+.pre-header-content div{
+  color: $font-light-color;
+  font-family: $font-family;
+  font-size: 10px;
+  line-height: 100%;
+  text-align: left;
+}
+
+.pre-header-content div a:link, .pre-header-content div a:visited, /* Yahoo! Mail Override */ .pre-header-content div a .yshortcuts /* Yahoo! Mail Override */{
+  color: $font-link-color;
+  font-weight: normal;
+  text-decoration: underline;
+}
+
+#template-header{
+  background-color: $bg-highlight-color;
+  border-bottom: 0;
+}
+
+.header-content{
+  color: $font-color;
+  font-family: $font-family;
+  font-size: 34px;
+  font-weight: bold;
+  line-height: 100%;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.header-content a:link, .header-content a:visited, /* Yahoo! Mail Override */ .header-content a .yshortcuts /* Yahoo! Mail Override */{
+  color: $font-link-color;
+  font-weight: normal;
+  text-decoration: underline;
+}
+
+#header-image{
+  height: auto;
+  max-width: 600px !important;
+}
+
+#template-container, .body-content{
+  background-color: #FFF;
+}
+
+.body-content div{
+  color:#505050;
+  font-family:Arial;
+  font-size:14px;
+  line-height:150%;
+  text-align:left;
+}
+
+.bodyContent div a:link, .body-content div a:visited, /* Yahoo! Mail Override */ .body-content div a .yshortcuts /* Yahoo! Mail Override */{
+  color: #336699;
+  font-weight: normal;
+  text-decoration: underline;
+}
+
+.body-content img{
+  display:inline;
+  height:auto;
+}
+
+#template-footer{
+  background-color:#FFFFFF;
+  border-top:0;
+}
+
+.footer-content div{
+  color: $font-light-color;
+  font-family: $font-family;
+  font-size: 12px;
+  line-height: 125%;
+  text-align: left;
+}
+
+.footer-content div a:link, .footer-content div a:visited, /* Yahoo! Mail Override */ .footer-content div a .yshortcuts /* Yahoo! Mail Override */{
+  color: $font-link-color;
+  font-weight: normal;
+  text-decoration: underline;
+}
+
+.footerContent img{
+  display: inline;
+}
+
+#social{
+  background-color: $bg-color;
+  border: 0;
+}
+
+#social div{
+  text-align: center;
+}
+
+#utility{
+  background-color: #FFFFFF;
+  border: 0;
+}
+
+#utility div{
+  text-align: center;
+}
+
+#monkeyRewards img{
+  max-width: 190px;
+}

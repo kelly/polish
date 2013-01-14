@@ -1,0 +1,41 @@
+<tr>
+  <td align="center" valign="top">
+    <table border="0" cellpadding="10" cellspacing="0" width="600" id="template-footer">
+      <tr>
+        <td valign="top" class="footer-content">
+          <table border="0" cellpadding="10" cellspacing="0" width="100%">
+            <tr>
+              <td colspan="2" valign="middle" id="social">
+                <div id="social-links">
+                  &nbsp;                  
+                  {{#if twitter_url}}<a href="{{twitter_url}}">follow on Twitter</a>{{/if}}{{#if facebook_url}}<a href="{{facebook_url}}">friend on Facebook</a>{{/if}}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td valign="top" width="350">
+                <div id="footer-copyright">
+                  <em>Copyright &copy; {{year}} {{company}}, All rights reserved.</em>
+                  <br />
+                  {{text}}
+                </div>
+              </td>
+              <td valign="top" width="190">
+                <div id="footer-links">
+                  {{links}}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" valign="middle" id="utility">
+                <div id="unsubscribe">
+                  &nbsp;<a href="{{unsubscribe_url}}">unsubscribe from this list</a>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
