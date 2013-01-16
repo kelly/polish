@@ -1,22 +1,25 @@
-path         = require('path')
-fs           = require('fs')
-EventEmitter = require('events').EventEmitter
-$            = require 'jquery'
+path         = require 'path'
+fs           = require 'fs'
 
-class Template extends EventEmitter
+class Template 
 
-  format: 'html'
-  el: undefined
+  format : 'html'
+  el     :  undefined
 
-  constructor: (filePath, @data, @options = {}) ->  
-    filePath = filePath + '.handlebars'
-    @file = fs.readFileSync(filePath, 'utf8');
+  constructor: (@path, @data, @options = {}) ->  
     @parent = @options.parent || null
+    @path += '.handlebars'
+
+  readFile: (callback) ->
+    fs.readFile @path, 'utf8', (err, data) ->
+      if err then console.log err
+      callback(data)
 
   compile: (page, callback) ->
-    page.evaluate (file, data) ->
-      template = Handlebars.compile(file)
-      template(data)
-    , callback, @file, @data
+    @readFile (file) =>
+      page.evaluate (file, data) ->
+        template = Handlebars.compile(file)
+        template(data)
+      , callback, file, @data
 
 module.exports = Template

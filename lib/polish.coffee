@@ -5,31 +5,29 @@ Template     = require './template'
 juice        = require 'juice'
 fs           = require 'fs'
 async        = require 'async'
+imageReplace = require './image'
 
-class Polish
+polish = (@layout, @locals, @options = {}) ->
 
-  constructor: (@layout, @locals, @options = {}) ->
+  # _.bindAll @, 'include', 'createPage', 'compileTemplates', 'compileLayout', 'inlineCSS'
 
-    _.bindAll @, 'include', 'createPage', 'compileTemplates', 'compileLayout', 'inlineCSS'
+  dir = path.resolve(__dirname, '..')
 
-    dir = path.resolve(__dirname, '..')
+  _.defaults @options,
+    viewportSize : 
+      width         : 1080
+      height        : 768
+    compression     : 70
+    tmpImgFile      : 'tmp.png'
+    tmpHTMLFile     : 'tmp.html'
+    tmpPath         : path.join(dir, '/tmp/');
+    imgPath         : path.join(dir, '/images/')
+    layoutsPath     : path.join(dir, '/layouts/')
+    stylesheetsPath : path.join(dir, '/stylesheets/')
+    includes        : ['http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js',
+                       'http://cdnjs.cloudflare.com/ajax/libs/jquery/1.8.3/jquery.min.js'] 
 
-    _.defaults @options,
-      viewportSize : 
-        width         : 1080
-        height        : 768
-      compression     : 70
-      tmpImgFile      : 'tmp.png'
-      tmpHTMLFile     : 'tmp.html'
-      tmpPath         : path.join(dir, '/tmp/');
-      imgPath         : path.join(dir, '/images/')
-      layoutsPath     : path.join(dir, '/layouts/')
-      stylesheetsPath : path.join(dir, '/stylesheets/')
-      includes        : ['http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js',
-                         'http://cdnjs.cloudflare.com/ajax/libs/jquery/1.8.3/jquery.min.js'] 
-    @render()
-
-  createPage: (callback) ->
+  createPage = (callback) ->
     phantom.create (@phantom) =>
       @phantom.createPage (page) =>
         page.set 'viewportSize', width: @options.viewportSize.width, height: @options.viewportSize.height
@@ -42,65 +40,59 @@ class Polish
             @page = page
             callback null
 
-  include: (callback) ->
-    if @options.includes
-      add = (urls) =>
-        @page.includeJs urls.pop(), -> 
-          if urls.length == 0 then callback(null) else add urls
-      add @options.includes
-    else callback()
+  includeAll = (callback) ->
+    async.map @options.includes, includeOne, -> callback(null)
 
-  compileLayout: (callback) ->
+  includeOne = (item, callback) ->
+    @page.includeJs item, -> 
+      callback(null)
+      
+  compileLayout = (callback) ->
     layout = new Template path.join(@options.layoutsPath, @layout), @locals
-    layout.compile @page, (html) ->
-      callback(null, html)
+    layout.compile @page, (html) -> callback(null, html)
 
-  compileTemplates: (callback) ->
+  compileAllTemplates = (callback) ->
     templates = []
-
-    lp = (templates) =>
-      if templates.length == 0 
-        callback(null)
-      else
-        template = templates.pop()
-        template.compile @page, (html) =>
-          @locals[template.parent] = html
-          lp templates
     
     _.each @locals, (item, key) ->
       unless typeof item == 'string' 
         templates.push new Template item.template, item.locals, parent: key
 
-    lp templates
+    async.map templates, compileOneTemplate, -> callback(null)
 
-  inlineCSS: (html, callback) ->
-    css = fs.readFileSync path.join(@options.stylesheetsPath, 'base.css'), 'utf8'
-    callback null, juice(html, css)
+  compileOneTemplate = (template, callback) ->
+    template.compile @page, (html) =>
+      @locals[template.parent] = html
+      callback(null)
+
+  createImages = ->
+    imageReplace @page, @options.images
+
+  inlineCSS = (html, callback) ->
+    fs.readFile path.join(@options.stylesheetsPath, 'base.css'), 'utf8', (err, data) ->
+      if err then callback err
+      callback null, juice(html, data)
   
-  render: ->
+  render = (callback) ->
     async.waterfall [
-      @createPage,
-      @include,
-      @compileTemplates,
-      @compileLayout,
-      @inlineCSS
+      createPage,
+      includeAll,
+      compileAllTemplates,
+      compileLayout,
+      inlineCSS,
+      createImages
     ], (err, result) ->
-      console.log result
+      if err then callback err else callback result
 
-    # @createPage()
-    # @on 'ready', =>
-    #   @compile (html) =>
-    #     css = fs.readFileSync path.join(@options.stylesheetsPath, 'base.css'), 'utf8'
-    #     # html = htmlToImage(@page, '.image')
-    #     @exit()
-    #     console.log juice(html, css)
-
-  exit: ->
+  exit = ->
     @phantom.exit()
 
-  setCSS: (selector, val, callback) ->
+  setCSS = (selector, val, callback) ->
     @page.evaluate (selector, val) ->
       $(selector, val).css(val)
     , callback, selector, val
 
-module.exports = Polish
+  render (result) ->
+    console.log result
+
+module.exports = polish

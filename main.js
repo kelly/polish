@@ -1,9 +1,14 @@
 require('coffee-script');
-var Polish = require('./lib/polish');
+var polish = require('./lib/polish');
 
 
-var polish = new Polish('basic', {
-  header: '<div class="hellooo">blah</div>',
+var html = polish('basic', {
+  header: {
+    template: 'templates/pre-header',
+    locals: {
+      content: 'test'
+    }
+  },
   content: '<div>test</div>',
   footer: {
     template: 'templates/footer',
@@ -13,8 +18,10 @@ var polish = new Polish('basic', {
     }
   }
 },
-{ images: ['.header', '#template'] }
+{ images: ['.header', '#template']}
 );
+
+console.log(html);
 
 
 // // footer = polish.template('footer',
