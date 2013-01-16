@@ -1,118 +1,106 @@
 _            = require 'underscore'
-$            = require 'jquery'
 phantom      = require 'phantomjs-node'
-EventEmitter = require('events').EventEmitter
-util         = require 'util' 
-gm           = require 'gm'
 path         = require 'path'
 Template     = require './template'
 juice        = require 'juice'
 fs           = require 'fs'
+async        = require 'async'
 
-class Polish extends EventEmitter
+class Polish
 
-  templates: []
+  constructor: (@layout, @locals, @options = {}) ->
 
-  constructor: (@template, @options = {}) ->
-
-    @on 'error', (msg) -> @report msg
-
-    _.bindAll @, 'report'
+    _.bindAll @, 'include', 'createPage', 'compileTemplates', 'compileLayout', 'inlineCSS'
 
     dir = path.resolve(__dirname, '..')
 
     _.defaults @options,
       viewportSize : 
         width         : 1080
-        height        : 768 
+        height        : 768
       compression     : 70
       tmpImgFile      : 'tmp.png'
+      tmpHTMLFile     : 'tmp.html'
       tmpPath         : path.join(dir, '/tmp/');
       imgPath         : path.join(dir, '/images/')
-      templatesPath   : path.join(dir, '/templates/')
+      layoutsPath     : path.join(dir, '/layouts/')
       stylesheetsPath : path.join(dir, '/stylesheets/')
       includes        : ['http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js',
                          'http://cdnjs.cloudflare.com/ajax/libs/jquery/1.8.3/jquery.min.js'] 
+    @render()
 
-  createPage: ->
+  createPage: (callback) ->
     phantom.create (@phantom) =>
       @phantom.createPage (page) =>
         page.set 'viewportSize', width: @options.viewportSize.width, height: @options.viewportSize.height
         page.set 'settings.loadImages', true
-        page.open @import, (status) =>
+        htmlPath = path.join(@options.tmpPath, @options.tmpHTMLFile)
+        page.open htmlPath, (status) =>
           if status isnt 'success'
-            @emit 'error', 'unable to load file #{@import}'
+            callback 'unable to load file #{@import}'
           else
             @page = page
-            if @options.includes then @include(@options.includes) else @emit 'ready'
+            callback null
 
+  include: (callback) ->
+    if @options.includes
+      add = (urls) =>
+        @page.includeJs urls.pop(), -> 
+          if urls.length == 0 then callback(null) else add urls
+      add @options.includes
+    else callback()
 
-  include: (urls) ->
-    @page.includeJs urls.pop(), => if urls.length == 0 then @emit 'ready' else @include urls
-
-  report: (msg) ->
-    console.log "error: #{msg}"
-
-  toImage: (els...) ->
-    @rasterize()
-    _.each els, (el) =>
-      @getDimensions el, (data) =>
-        if data == null 
-          @emit 'error', "can\'t find selector: #{el}"
-        else 
-          path = "#{@options.imgPath}/#{el.replace(/^\w+#(\w+)/,'')}.png"
-          gm(@options.tmpPath)
-            .crop(data.width, data.height, data.offset.left, data.offset.top)
-            .write path, (err) =>
-              if err 
-                @emit 'error', err
-              else 
-                @optimize(path)
-
-  template: (file, data) ->
-    template = new Template(file, data, path: @options.templatesPath)
-
-  append: (templates...) ->
-    @templates = @templates.concat(templates)
-
-  readStylesheets: ->
-    fs.readFileSync path.join(@options.stylesheetsPath, 'style.css'), 'utf8'
+  compileLayout: (callback) ->
+    layout = new Template path.join(@options.layoutsPath, @layout), @locals
+    layout.compile @page, (html) ->
+      callback(null, html)
 
   compileTemplates: (callback) ->
-    html = ''
+    templates = []
+
     lp = (templates) =>
-      templates.pop().compile @page, (el) ->
-        html += el
-        if templates.length == 0 then callback(html) else lp(templates)
-    lp @templates
+      if templates.length == 0 
+        callback(null)
+      else
+        template = templates.pop()
+        template.compile @page, (html) =>
+          @locals[template.parent] = html
+          lp templates
+    
+    _.each @locals, (item, key) ->
+      unless typeof item == 'string' 
+        templates.push new Template item.template, item.locals, parent: key
 
-  generate: ->
-    @createPage()
-    @on 'ready', =>
-      @compileTemplates (html) =>
-        css = @readStylesheets()
-        console.log juice(html, css)
-        @exit()
+    lp templates
 
-  rasterize: ->
-    @page.render path.join(@options.tmpPath, @options.tmpImageFile)
+  inlineCSS: (html, callback) ->
+    css = fs.readFileSync path.join(@options.stylesheetsPath, 'base.css'), 'utf8'
+    callback null, juice(html, css)
+  
+  render: ->
+    async.waterfall [
+      @createPage,
+      @include,
+      @compileTemplates,
+      @compileLayout,
+      @inlineCSS
+    ], (err, result) ->
+      console.log result
 
-  optimize: (path) ->
+    # @createPage()
+    # @on 'ready', =>
+    #   @compile (html) =>
+    #     css = fs.readFileSync path.join(@options.stylesheetsPath, 'base.css'), 'utf8'
+    #     # html = htmlToImage(@page, '.image')
+    #     @exit()
+    #     console.log juice(html, css)
 
   exit: ->
     @phantom.exit()
 
-  setCss: (selector, callback) ->
-
-  getDimensions: (selector, callback) ->
-    @page.evaluate (selector, callback) ->
-      
-      $el = $(selector)
-      unless $el[0] == undefined
-        offset: $el.offset()
-        height: $el.outerHeight()
-        width:  $el.outerWidth()
-
-    , callback, selector
+  setCSS: (selector, val, callback) ->
+    @page.evaluate (selector, val) ->
+      $(selector, val).css(val)
+    , callback, selector, val
 
 module.exports = Polish
