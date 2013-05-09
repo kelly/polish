@@ -3,9 +3,6 @@ fs           = require 'fs'
 
 class Template 
 
-  format : 'html'
-  el     :  undefined
-
   constructor: (@path, @data, @options = {}) ->  
     @parent = @options.parent || null
     @path += '.handlebars'

@@ -1,0 +1,23 @@
+<tr>
+  <td align="center" valign="top">
+    <table border="0" cellpadding="0" cellspacing="0" width="600" id="template-header">
+      <tr>
+        {{#if button.left}}
+        <td class="header-button {{button.left.className}}">
+          <a href="{{button.left.url}}" target="_blank">{{button.left.text}}</a>
+        </td>
+        {{/if}}
+        <td class="header-content"> 
+          {{#if img}}
+          <img src="{{img}}" style="max-width:600px;" id="header-image" />
+          {{/if}}
+        </td>
+        {{#if button.right}}
+        <td class="header-button {{button.right.className}}">
+          <a href="{{button.right.url}}" target="_blank">{{button.right.text}}</a>
+        </td>
+        {{/if}}
+      </tr>
+    </table>
+  </td>
+</tr>
